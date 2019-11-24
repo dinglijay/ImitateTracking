@@ -1,6 +1,6 @@
 import gym
-import gym_track
-env =gym.make('track-feat-v0')
+import track_env
+env =gym.make('track-v0')
 print(env.action_space)
 print(env.action_space.shape)
 print(env.observation_space)

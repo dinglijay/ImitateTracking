@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.misc import imread, imresize
-
+# from scipy.misc import imread, imresize
+from PIL import Image
 def cal_distance(samples, ground_th):
     
     x_s, y_s, w_s, h_s = np.array(samples, dtype='float')
@@ -93,7 +93,7 @@ def crop_image(img, bbox, img_size=107, padding=0, valid=False):
         half_w += pad_w
         half_h += pad_h
 
-    img_h, img_w, _ = img.shape
+    img_h, img_w = img.size
     min_x = int(center_x - half_w + 0.5)
     min_y = int(center_y - half_h + 0.5)
     max_x = int(center_x + half_w + 0.5)
@@ -111,7 +111,7 @@ def crop_image(img, bbox, img_size=107, padding=0, valid=False):
         cropped = 128 * np.ones((max_y - min_y, max_x - min_x, 3), dtype='uint8')
         cropped[min_y_val - min_y:max_y_val - min_y, min_x_val - min_x:max_x_val - min_x, :] \
                 = img[min_y_val:max_y_val, min_x_val:max_x_val, :]
-    scaled_l = imresize(cropped, (img_size, img_size))
+    scaled_l = cv2.resize(cropped, (img_size, img_size))
         
     min_x = int(center_x - w + 0.5)
     min_y = int(center_y - h + 0.5)
@@ -130,7 +130,7 @@ def crop_image(img, bbox, img_size=107, padding=0, valid=False):
         cropped = 128 * np.ones((max_y - min_y, max_x - min_x, 3), dtype='uint8')
         cropped[min_y_val - min_y:max_y_val - min_y, min_x_val - min_x:max_x_val - min_x, :] \
             = img[min_y_val:max_y_val, min_x_val:max_x_val, :]
-    scaled_g = imresize(cropped, (img_size, img_size))
+    scaled_g = cv2.resize(cropped, (img_size, img_size))
 
     return np.array([scaled_g, scaled_l])
 
@@ -141,7 +141,7 @@ def crop_resize(img, bbox, img_size=107, padding=0, valid=False):
     #x, y, w, h = bbox
     
     
-    img_h, img_w, _ = img.shape
+    img_h, img_w, _ = img.size
     x = max(0, x)
     y = max(0, y)
     xend = min(img_w, x+w)
@@ -149,6 +149,6 @@ def crop_resize(img, bbox, img_size=107, padding=0, valid=False):
     
     cropped = img[y:yend, x:xend]
     
-    scaled = imresize(cropped, (img_size, img_size))
+    scaled = cv2.resize(cropped, (img_size, img_size))
 
     return scaled

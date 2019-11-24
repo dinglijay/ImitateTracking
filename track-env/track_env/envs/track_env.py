@@ -15,8 +15,9 @@ import pickle
 import random
 
 import sys
-sys.path.append('/home/dylan/DL/Codes/myTrack')
-from scipy.misc import imread 
+sys.path.append('../../..')
+# from scipy.misc import imread 
+from PIL import Image
 from baselines.common import tf_util as U
 #from gailtf.baselines.common import set_global_seeds, tf_util as U
 
@@ -36,8 +37,8 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
         
-        pkl_path = 'dataset/vot-otb.pkl' if db=='VOT' else 'dataset/otb-vot.pkl'
-        self.data_path = "dataset/"
+        pkl_path = '../../../dataset/vot-otb.pkl' if db=='VOT' else '../../../dataset/otb-vot.pkl'
+        self.data_path = "../../../dataset/"
         with open(pkl_path, 'rb') as f:
             self.dataset = pickle.load(f)
             
@@ -65,7 +66,7 @@ class TrackEnv(gym.Env):
             gt = None
         else:
             img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
-            self.img = imread(img_path, mode='RGB')
+            self.img = np.array(Image.open(img_path))
             ob = crop_image(self.img, self.pos_trackerCurr)
             self.img_g, self.img_l = ob[0], ob[1]
             episode_over = False
@@ -86,7 +87,7 @@ class TrackEnv(gym.Env):
         self.pointer = idx = 1 + np.random.randint(max(1, self.n_images-self.min_len))
 
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
-        self.img = imread(img_path, mode='RGB')
+        self.img = Image.open(img_path)
         ob = crop_image(self.img, self.gts[idx-1])
         self.img_g, self.img_l = ob[0], ob[1]
                
@@ -101,7 +102,7 @@ class TrackEnv(gym.Env):
         bbox_lastFrame = self.gts[idx]
         
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]
-        img = imread(img_path, mode='RGB')         
+        img = np.array(Image.open(img_path))
         img_g, img_l = crop_image(img, bbox_lastFrame)
         
         plt.figure('img_g')
@@ -128,7 +129,7 @@ class TrackEnv(gym.Env):
     def gen_ob(self, idx, bbox_lastFrame):
         
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]    
-        img_g, img_l = crop_image(imread(img_path, mode='RGB'), bbox_lastFrame)
+        img_g, img_l = crop_image(Image.oped(img_path, mode='RGB'), bbox_lastFrame)
         ob = self.featureEx.feature((img_g, img_l))
             
         return ob
@@ -136,17 +137,17 @@ class TrackEnv(gym.Env):
 
 if __name__ == '__main__':
     
-    from track_policy import TrackPolicy, TrackPolicyNew
+    # from track_policy import TrackPolicy, TrackPolicyNew
     
     env = TrackEnv()  
-    actor = TrackPolicyNew("actor", 
-                            ob_space=env.observation_space, 
-                            ac_space=env.action_space)
+    # actor = TrackPolicyNew("actor", 
+    #                        ob_space=env.observation_space, 
+    #                        ac_space=env.action_space)
     U.initialize()
     
     ob = env.reset('vot2016/hand')
     
-    img = imread(env.data_path + env.seq_id + r'/' + env.images[0], mode='RGB')
+    img = Image.open(env.data_path + env.seq_id + r'/' + env.images[0])
         
     fig = plt.figure()
     ax = plt.Axes(fig, [0., 0., 1., 1.])
@@ -198,7 +199,7 @@ if __name__ == '__main__':
         if done:
             break
 #        env.render()
-        ac1, vpred1 = actor.act(stochastic=False, ob=ob)
-#        ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
+#        ac1, vpred1 = actor.act(stochastic=False, ob=ob)
+        ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
 #        ac1 = np.array([0.05,0.05,0.00,0.00])
     print(reward_sum/(env.n_images-1))
