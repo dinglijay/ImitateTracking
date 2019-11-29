@@ -16,9 +16,8 @@ import random
 
 import sys
 sys.path.append('../../..')
-# from scipy.misc import imread 
 from PIL import Image
-from baselines.common import tf_util as U
+
 #from gailtf.baselines.common import set_global_seeds, tf_util as U
 
 from gtutils import  move_bbox, compute_iou
@@ -56,16 +55,17 @@ class TrackEnv(gym.Env):
         idx = self.pointer
         
         # compute reward of previous frame
-        self.pos_trackerCurr = move_bbox(self.pos_trackerCurr, action, self.img.shape)
-        reward = compute_iou(self.pos_trackerCurr, self.gts[idx-1])
+        self.pos_trackerCurr = self.pos_trackerCurr.move(action).fit_image(self.img.size)
+        reward = self.pos_trackerCurr.iou(self.gts[idx-1])
+#        reward = compute_iou(self.pos_trackerCurr, self.gts[idx-1])
                 
-        if idx==self.n_images or reward<=0.3:
+        if idx==self.n_images or reward<=0.0:
             ob = None
             episode_over = True
             gt = None
         else:
             img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
-            self.img = np.array(Image.open(img_path))
+            self.img = Image.open(img_path)
             ob = crop_resize(self.img, self.pos_trackerCurr)
             self.img_g, self.img_l = ob[0], ob[1]
             episode_over = False
@@ -78,7 +78,7 @@ class TrackEnv(gym.Env):
     def reset(self, seq_name=None):
         """ Repeats NO-OP action until a new episode begins. """
         self.seq_id = seq_name if seq_name else random.choice(self.seq_names)     
-        self.gts = self.dataset[self.seq_id]['gt']
+        self.gts = [BoundingBox(*i) for i in self.dataset[self.seq_id]['gt']]
         self.images = self.dataset[self.seq_id]['images']
         self.n_images = len(self.images)
         assert(self.n_images == len(self.gts))
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     # actor = TrackPolicyNew("actor", 
     #                        ob_space=env.observation_space, 
     #                        ac_space=env.action_space)
-    U.initialize()
+#    U.initialize()
     
     ob = env.reset('vot2016/hand')
     
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     im = ax.imshow(img)
     
 
-    gt = env.gts[0]
+    gt = env.gts[0].to_tuple()
     gt_rect = plt.Rectangle(tuple(gt[:2]), gt[2], gt[3],
                             linewidth=2, edgecolor="r", zorder=1, fill=False)
     ax.add_patch(gt_rect)
@@ -176,14 +176,14 @@ if __name__ == '__main__':
         
         im.set_data(env.img)
        
-        gt = env.gts[env.pointer]
+        gt = env.gts[env.pointer].to_tuple()
         gt_rect.set_xy(gt[:2])
         gt_rect.set_width(gt[2])
         gt_rect.set_height(gt[3])
 
         ob, reward, done, tracker_info = env.step(ac1)
             
-        result_bb = tracker_info['tracker_post']
+        result_bb = tracker_info['tracker_post'].to_tuple()
         rect.set_xy(result_bb[:2])
         rect.set_width(result_bb[2])
         rect.set_height(result_bb[3])

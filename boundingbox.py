@@ -231,7 +231,7 @@ class BoundingBox:
         # return the intersection over union value
         return iou
     
-    def do_action_gail(self, deta):
+    def move(self, deta):
             
         pos_ = self.to_tuple()
         deta = np.squeeze(deta)
@@ -319,6 +319,10 @@ class BoundingBox:
 
 
 def cal_distance(samples, ground_th):
+    if isinstance(samples, BoundingBox):
+        samples = samples.to_tuple()
+    if isinstance(ground_th, BoundingBox):
+        ground_th = ground_th.to_tuple()
     
     x_s, y_s, w_s, h_s = np.array(samples, dtype='float')
     x_gt,y_gt,w_gt,h_gt = np.array(ground_th, dtype='float')
