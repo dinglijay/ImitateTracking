@@ -38,8 +38,10 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
         
-        pkl_path = '../../../dataset/vot-otb.pkl' if db=='VOT' else '../../../dataset/otb-vot.pkl'
-        self.data_path = "../../../dataset/"
+        path_head = 'D:/Codes/DylanTrack/'
+        self.data_path = "D:/DBs/"
+        pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
+        
         with open(pkl_path, 'rb') as f:
             self.dataset = pickle.load(f)
             
