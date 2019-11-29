@@ -1,6 +1,9 @@
 import numpy as np
-# from scipy.misc import imread, imresize
+import cv2
 from PIL import Image
+from commons import imread
+import boundingbox
+
 def cal_distance(samples, ground_th):
     
     x_s, y_s, w_s, h_s = np.array(samples, dtype='float')
@@ -22,10 +25,10 @@ def move_bbox(pos_, deta_pos, img_size):
 #    # border value
 #    deta_pos[0:2] = np.clip(deta_pos[0:2], -1.0, 1.0)
 #    deta_pos[2:] = np.clip(deta_pos[2:], -0.05, 0.05)
-    if abs(deta_pos[2]) > 0.08:
-        deta_pos[2] = 0
-    if abs(deta_pos[3]) > 0.08:
-        deta_pos[3] = 0
+#    if abs(deta_pos[2]) > 0.08:
+#        deta_pos[2] = 0
+#    if abs(deta_pos[3]) > 0.08:
+#        deta_pos[3] = 0
 
 
     
@@ -93,7 +96,7 @@ def crop_image(img, bbox, img_size=107, padding=0, valid=False):
         half_w += pad_w
         half_h += pad_h
 
-    img_h, img_w = img.size
+    img_h, img_w = img.size, img.size
     min_x = int(center_x - half_w + 0.5)
     min_y = int(center_y - half_h + 0.5)
     max_x = int(center_x + half_w + 0.5)
@@ -136,9 +139,10 @@ def crop_image(img, bbox, img_size=107, padding=0, valid=False):
 
 
 
-def crop_resize(img, bbox, img_size=107, padding=0, valid=False):
-    x, y, w, h = [int(round(num)) for num in bbox]
-    #x, y, w, h = bbox
+def crop_resize(img, bbox, img_size=107, scale=1):
+    if isinstance(bbox, BoundingBox):
+        bbox = bbox.to_tuple()
+    x, y, w, h = bbox
     
     
     img_h, img_w, _ = img.size
@@ -152,3 +156,25 @@ def crop_resize(img, bbox, img_size=107, padding=0, valid=False):
     scaled = cv2.resize(cropped, (img_size, img_size))
 
     return scaled
+
+
+def crop_resize2(img, bbox, img_size=107):
+    if isinstance(bbox, BoundingBox):
+        bbox = bbox.to_tuple()
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+        
+    patch = img.crop(bbox)
+    return np.array(patch)
+    
+
+if __name__ == "__main__":
+    img = Image.open('lena.png')
+    img = imread('lena.png')
+    
+#    bbox = boundingbox.BoundingBox(100,100,122,122)
+    bbox = (100,100,200,300)
+    patch = crop_image(img, bbox)
+        
+    
+    

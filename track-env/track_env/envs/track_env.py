@@ -21,7 +21,8 @@ from PIL import Image
 from baselines.common import tf_util as U
 #from gailtf.baselines.common import set_global_seeds, tf_util as U
 
-from gtutils import cal_distance, move_bbox, compute_iou, crop_image
+from gtutils import  move_bbox, compute_iou
+from boundingbox import BoundingBox, cal_distance, crop_resize
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -52,10 +53,6 @@ class TrackEnv(gym.Env):
         self.pointer += 1
         idx = self.pointer
         
-#        # limitation on action
-#        ac[2] = np.clip(ac[2],-0.05,0.05)
-#        ac[3] = np.clip(ac[3],-0.05,0.05)
-        
         # compute reward of previous frame
         self.pos_trackerCurr = move_bbox(self.pos_trackerCurr, action, self.img.shape)
         reward = compute_iou(self.pos_trackerCurr, self.gts[idx-1])
@@ -67,7 +64,7 @@ class TrackEnv(gym.Env):
         else:
             img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
             self.img = np.array(Image.open(img_path))
-            ob = crop_image(self.img, self.pos_trackerCurr)
+            ob = crop_resize(self.img, self.pos_trackerCurr)
             self.img_g, self.img_l = ob[0], ob[1]
             episode_over = False
             gt = self.gts[idx]
@@ -88,7 +85,7 @@ class TrackEnv(gym.Env):
 
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
         self.img = Image.open(img_path)
-        ob = crop_image(self.img, self.gts[idx-1])
+        ob = crop_resize(self.img, self.gts[idx-1])
         self.img_g, self.img_l = ob[0], ob[1]
                
         self.pos_trackerCurr = self.gts[idx-1]
@@ -103,7 +100,7 @@ class TrackEnv(gym.Env):
         
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]
         img = np.array(Image.open(img_path))
-        img_g, img_l = crop_image(img, bbox_lastFrame)
+        img_g, img_l = crop_resize(img, bbox_lastFrame)
         
         plt.figure('img_g')
         plt.imshow(self.img_g)
@@ -129,7 +126,7 @@ class TrackEnv(gym.Env):
     def gen_ob(self, idx, bbox_lastFrame):
         
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]    
-        img_g, img_l = crop_image(Image.oped(img_path, mode='RGB'), bbox_lastFrame)
+        img_g, img_l = crop_resize(Image.oped(img_path, mode='RGB'), bbox_lastFrame)
         ob = self.featureEx.feature((img_g, img_l))
             
         return ob
