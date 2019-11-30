@@ -33,8 +33,10 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
         
-        path_head = 'D:/Codes/DylanTrack/'
-        self.data_path = "D:/DBs/"
+        # path_head = 'D:/Codes/DylanTrack/'
+        #self.data_path = "D:/DBs/"
+        path_head = '../../../'
+        self.data_path = '../../../dataset/'
         pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
         
         with open(pkl_path, 'rb') as f:
@@ -193,7 +195,6 @@ if __name__ == '__main__':
         
         reward_sum += reward
 
-    
         if done:
             break
 #        env.render()
