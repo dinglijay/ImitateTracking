@@ -17,10 +17,6 @@ import random
 import sys
 sys.path.append('../../..')
 from PIL import Image
-
-#from gailtf.baselines.common import set_global_seeds, tf_util as U
-
-from gtutils import  move_bbox, compute_iou
 from boundingbox import BoundingBox, cal_distance, crop_resize
 
 import matplotlib.pyplot as plt
@@ -54,12 +50,15 @@ class TrackEnv(gym.Env):
         self.pointer += 1
         idx = self.pointer
         
-        # compute reward of previous frame
-        self.pos_trackerCurr = self.pos_trackerCurr.move(action).fit_image(self.img.size)
-        reward = self.pos_trackerCurr.iou(self.gts[idx-1])
+        # move bbox and compute reward
+        pos_moved = self.pos_trackerCurr.move(action)
+        reward = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
+        self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=0)
+        
+        
 #        reward = compute_iou(self.pos_trackerCurr, self.gts[idx-1])
                 
-        if idx==self.n_images or reward<=0.0:
+        if idx==self.n_images or reward<0.0:
             ob = None
             episode_over = True
             gt = None
@@ -75,7 +74,7 @@ class TrackEnv(gym.Env):
 
         return ob, reward, episode_over, tracker_info
 
-    def reset(self, seq_name=None):
+    def reset(self, seq_name=None, startFromFirst=False):
         """ Repeats NO-OP action until a new episode begins. """
         self.seq_id = seq_name if seq_name else random.choice(self.seq_names)     
         self.gts = [BoundingBox(*i) for i in self.dataset[self.seq_id]['gt']]
@@ -83,7 +82,9 @@ class TrackEnv(gym.Env):
         self.n_images = len(self.images)
         assert(self.n_images == len(self.gts))
 
-        self.pointer = idx = 1 + np.random.randint(max(1, self.n_images-self.min_len))
+#        self.pointer = idx = 1 + np.random.randint(max(1, self.n_images-self.min_len))
+        self.pointer = idx = 1 if startFromFirst else \
+                             1 + np.random.randint(max(1, self.n_images-self.min_len))
 
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
         self.img = Image.open(img_path)
@@ -139,12 +140,13 @@ if __name__ == '__main__':
     # from track_policy import TrackPolicy, TrackPolicyNew
     
     env = TrackEnv()  
+    ob = env.reset('vot2016/hand', startFromFirst=True)
+    
     # actor = TrackPolicyNew("actor", 
     #                        ob_space=env.observation_space, 
     #                        ac_space=env.action_space)
-#    U.initialize()
+    # U.initialize()
     
-    ob = env.reset('vot2016/hand')
     
     img = Image.open(env.data_path + env.seq_id + r'/' + env.images[0])
         
@@ -154,7 +156,6 @@ if __name__ == '__main__':
     fig.add_axes(ax)
     im = ax.imshow(img)
     
-
     gt = env.gts[0].to_tuple()
     gt_rect = plt.Rectangle(tuple(gt[:2]), gt[2], gt[3],
                             linewidth=2, edgecolor="r", zorder=1, fill=False)
@@ -165,7 +166,6 @@ if __name__ == '__main__':
     
     plt.pause(.01)
     plt.draw()
-    
     
 #    ac1, vpred1 = actor.act(stochastic=False, fc_input=ob)
     ac1 = np.array(cal_distance(env.gts[0], env.gts[1]))
@@ -178,20 +178,19 @@ if __name__ == '__main__':
        
         gt = env.gts[env.pointer].to_tuple()
         gt_rect.set_xy(gt[:2])
-        gt_rect.set_width(gt[2])
-        gt_rect.set_height(gt[3])
+        gt_rect.set_width(gt[2]-1)
+        gt_rect.set_height(gt[3]-1)
 
         ob, reward, done, tracker_info = env.step(ac1)
             
         result_bb = tracker_info['tracker_post'].to_tuple()
-        rect.set_xy(result_bb[:2])
-        rect.set_width(result_bb[2])
-        rect.set_height(result_bb[3])
+        rect.set_xy(result_bb[:2])  
+        rect.set_width(result_bb[2]-1)
+        rect.set_height(result_bb[3]-1)
         
         plt.pause(.01)
         plt.draw()
         
-        print(reward)
         reward_sum += reward
 
     
