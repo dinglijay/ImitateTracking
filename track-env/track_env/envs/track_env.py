@@ -9,13 +9,16 @@ Consider the length limitation of the sequences, 20-40?
 @author: qxy
 """
 
+
 import gym
 import numpy as np
 import pickle
 import random
 
-import sys
-sys.path.append('../../..')
+if __name__ == "__main___":
+    import sys
+    sys.path.append('../../..')
+    
 from PIL import Image
 from boundingbox import BoundingBox, cal_distance, crop_resize
 from configs import ADNetConf
