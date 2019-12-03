@@ -18,6 +18,7 @@ import sys
 sys.path.append('../../..')
 from PIL import Image
 from boundingbox import BoundingBox, cal_distance, crop_resize
+from configs import ADNetConf
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -33,10 +34,10 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
         
-        # path_head = 'D:/Codes/DylanTrack/'
-        #self.data_path = "D:/DBs/"
-        path_head = '../../../'
-        self.data_path = '../../../dataset/'
+        path_head = 'D:/Codes/DylanTrack/'
+        self.data_path = "D:/DBs/"
+#        path_head = '../../../'
+#        self.data_path = '../../../dataset/'
         pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
         
         with open(pkl_path, 'rb') as f:
@@ -55,11 +56,8 @@ class TrackEnv(gym.Env):
         # move bbox and compute reward
         pos_moved = self.pos_trackerCurr.move(action)
         reward = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
-        self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=0)
+        self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=10)
         
-        
-#        reward = compute_iou(self.pos_trackerCurr, self.gts[idx-1])
-                
         if idx==self.n_images or reward<0.0:
             ob = None
             episode_over = True
@@ -84,7 +82,6 @@ class TrackEnv(gym.Env):
         self.n_images = len(self.images)
         assert(self.n_images == len(self.gts))
 
-#        self.pointer = idx = 1 + np.random.randint(max(1, self.n_images-self.min_len))
         self.pointer = idx = 1 if startFromFirst else \
                              1 + np.random.randint(max(1, self.n_images-self.min_len))
 
@@ -139,15 +136,16 @@ class TrackEnv(gym.Env):
 
 if __name__ == '__main__':
     
-    # from track_policy import TrackPolicy, TrackPolicyNew
+#    from track_policy import TrackPolicyNew
     
+    ADNetConf.get('../../../conf/dylan.yaml')
     env = TrackEnv()  
     ob = env.reset('vot2016/hand', startFromFirst=True)
     
-    # actor = TrackPolicyNew("actor", 
-    #                        ob_space=env.observation_space, 
-    #                        ac_space=env.action_space)
-    # U.initialize()
+#    actor = TrackPolicyNew("actor", 
+#                           ob_space=env.observation_space, 
+#                           ac_space=env.action_space)
+#    U.initialize()
     
     
     img = Image.open(env.data_path + env.seq_id + r'/' + env.images[0])

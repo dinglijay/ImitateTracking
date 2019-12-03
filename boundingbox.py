@@ -180,11 +180,11 @@ class BoundingBox:
         # margin is the max padding size
         if not isinstance(imgwh, Coordinate):
             imgwh = Coordinate(*imgwh)
-        x = minmax(self.xy.x, -margin, imgwh.x-margin)
-        y = minmax(self.xy.y, -margin, imgwh.y-margin)
+        x = minmax(self.xy.x, -margin/2, imgwh.x-margin/2)
+        y = minmax(self.xy.y, -margin/2, imgwh.y-margin/2)
         
-        w = minmax(self.wh.x, margin, imgwh.x+margin-x)
-        h = minmax(self.wh.y, margin, imgwh.y+margin-y)
+        w = minmax(self.wh.x, margin, imgwh.x+margin/2-x)
+        h = minmax(self.wh.y, margin, imgwh.y+margin/2-y)
         
         return BoundingBox(x,y,w,h)
         
@@ -329,44 +329,14 @@ def cal_distance(samples, ground_th):
 
     deltaX = (x_gt + w_gt/2 - x_s - w_s/2) / w_s
     deltaY = (y_gt + h_gt/2 - y_s - h_s/2) / h_s
-#    deltaX = (x_gt - x_s) / w_s
-#    deltaY = (y_gt - y_s) / h_s
     deltaW = np.log(w_gt / w_s)
     deltaH = np.log(h_gt / h_s)
     
     return deltaX, deltaY, deltaW, deltaH
 
-  
-
-def compute_iou(boxA, boxB):
-    # determine the (x, y)-coordinates of the intersection rectangle
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[0] + boxA[2], boxB[0] + boxB[2])
-    yB = min(boxA[1] + boxA[3], boxB[1] + boxB[3])
-
-    if xA < xB and yA < yB:
-        # compute the area of intersection rectangle
-        interArea = (xB - xA) * (yB - yA)
-        # compute the area of both the prediction and ground-truth
-        # rectangles
-        boxAArea = boxA[2] * boxA[3]
-        boxBArea = boxB[2] * boxB[3]
-        # compute the intersection over union by taking the intersection
-        # area and dividing it by the sum of prediction + ground-truth
-        # areas - the intersection area
-        iou = interArea / float(boxAArea + boxBArea - interArea)
-    else:
-        iou = 0
-
-    assert iou >= 0
-    assert iou <= 1.01
-
-    return iou
-
-
  
-def crop_resize(img, bbox, img_size=107, zoom=[1.0, 2.0]):
+def crop_resize(img, bbox, img_size=107, zoom= [1.0, 2.0]):
+    zoom = ADNetConf.g()['dl_paras']['zoom_scale']
     
     if isinstance(img, np.ndarray):
         img = Image.fromarray(img)
@@ -385,7 +355,7 @@ def crop_resize(img, bbox, img_size=107, zoom=[1.0, 2.0]):
     return np.array(patchs)
 
 if __name__ == '__main__':
-    ADNetConf.get('./conf/large.yaml')
+    ADNetConf.get('./conf/dylan.yaml')
 
     # iou test
     box_a = BoundingBox(0, 0, 100, 100)
@@ -396,18 +366,11 @@ if __name__ == '__main__':
     box_b = BoundingBox(5, 7, 7, 10)
     assert 0.096 < box_a.iou(box_b) < 0.097
 
-    
+    # crop_resize test    
     img = Image.open('0028.jpg', mode='r')    
     bbox = BoundingBox(331,152,26,61)
-#    bbox = BoundingBox(-1232,0,1234,1235)
     ob = crop_resize(img, bbox)
-
     
-    
-    
-    
-    
-
 #    # random generator test
 #    gt_box = BoundingBox.read_vid_gt('./data/freeman1/')[0]
 #    gt_box.wh.x = gt_box.wh.y = 30

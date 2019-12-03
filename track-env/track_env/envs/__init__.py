@@ -1,1 +1,1 @@
-from gym_track.envs.track_env import TrackEnv
+from track_env.envs.track_env import TrackEnv

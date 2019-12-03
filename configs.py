@@ -21,7 +21,8 @@ class ADNetConf:
 
     def __getitem__(self, key):
         return self.conf[key]
-
+    
 if __name__ == '__main__':
-    cf = ADNetConf.get('conf/large.yaml')
-    pass
+    ADNetConf.get('conf/dylan.yaml')
+    print(ADNetConf.get()['initial_finetune']['pos_thresh'])
+
