@@ -14,6 +14,8 @@ from baselines.common.distributions import make_pdtype
 
 from configs import ADNetConf
 
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 class TrackPolicy(object):
     recurrent = False
     
@@ -172,8 +174,7 @@ if __name__ == '__main__':
     img_gl = crop_resize(img1, bbox)
 
     pi = TrackPolicy("pi", ob_space=env.observation_space, ac_space=env.action_space)
-    
-    U.initialize()
+        
     ac1, vpred1 = pi.act(stochastic=False, ob=img_gl)
     print(ac1)
     print(vpred1)
