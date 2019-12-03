@@ -27,7 +27,7 @@ import platform
 
 class TrackEnv(gym.Env):
 
-    def __init__(self, db='VOT'):
+    def __init__(self, db='VOT', path_head='', data_path='dataset/'):
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(4,), dtype=np.float32)
         # self.observation_space = spaces.Box(low=0, high=100, shape=(1024,), dtype=np.float32)
         # self.observation_space = spaces.Box(low=-128, high=128, shape=(107,107,3))
@@ -35,13 +35,8 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32), 
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
-        
-        if platform.system() == 'Windows':
-            path_head = 'D:/Codes/DylanTrack/'
-            self.data_path = "D:/DBs/"
-        else:
-            path_head = '../../../'
-            self.data_path = '../../../dataset/'
+
+        self.data_path = data_path
         pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
         
         with open(pkl_path, 'rb') as f:
@@ -52,8 +47,7 @@ class TrackEnv(gym.Env):
   
         self.min_len = 40
 
-    def step(self, action):
-        
+    def step(self, action):     
         self.pointer += 1
         idx = self.pointer
         
@@ -100,7 +94,6 @@ class TrackEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         """ Viewer only supports human mode currently. """
-        
         idx = self.pointer
         bbox_lastFrame = self.gts[idx]
         
@@ -116,7 +109,6 @@ class TrackEnv(gym.Env):
         plt.imshow(self.img_l)
         plt.pause(0.02)
 
-        
         plt.figure('img')
         plt.imshow(img)
         x, y, w, h = [int(round(num)) for num in self.pos_trackerCurr]
@@ -127,15 +119,6 @@ class TrackEnv(gym.Env):
         plt.close('img_g')
         plt.close('img_l')
         plt.close('img')
-        
-    
-    def gen_ob(self, idx, bbox_lastFrame):
-        
-        img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]    
-        img_g, img_l = crop_resize(Image.oped(img_path, mode='RGB'), bbox_lastFrame)
-        ob = self.featureEx.feature((img_g, img_l))
-            
-        return ob
 
 
 if __name__ == '__main__':
@@ -143,7 +126,12 @@ if __name__ == '__main__':
 #    from track_policy import TrackPolicyNew
     
     ADNetConf.get('../../../conf/dylan.yaml')
-    env = TrackEnv()  
+    
+    if platform.system() == 'Windows':
+        env = TrackEnv(path_head='D:/Codes/DylanTrack/', data_path="D:/DBs/")
+    else:
+        env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
+        
     ob = env.reset('vot2016/hand', startFromFirst=True)
     
 #    actor = TrackPolicyNew("actor", 
