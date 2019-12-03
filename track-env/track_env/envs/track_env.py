@@ -23,6 +23,8 @@ from configs import ADNetConf
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+import platform
+
 class TrackEnv(gym.Env):
 
     def __init__(self, db='VOT'):
@@ -34,10 +36,12 @@ class TrackEnv(gym.Env):
                 gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
                 ))
         
-        path_head = 'D:/Codes/DylanTrack/'
-        self.data_path = "D:/DBs/"
-#        path_head = '../../../'
-#        self.data_path = '../../../dataset/'
+        if platform.system() == 'Windows':
+            path_head = 'D:/Codes/DylanTrack/'
+            self.data_path = "D:/DBs/"
+        else:
+            path_head = '../../../'
+            self.data_path = '../../../dataset/'
         pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
         
         with open(pkl_path, 'rb') as f:
