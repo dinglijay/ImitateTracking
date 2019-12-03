@@ -15,6 +15,7 @@ from baselines.common.distributions import make_pdtype
 from configs import ADNetConf
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 class TrackPolicy(object):
     recurrent = False
