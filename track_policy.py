@@ -33,8 +33,8 @@ class TrackPolicy(object):
         
         self.pdtype = pdtype = make_pdtype(ac_space)
         
-        assert isinstance(ob_space, gym.spaces.tuple.Tuple)
-        ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[None, 2] + list(ob_space.spaces[0].shape))
+        assert not isinstance(ob_space, gym.spaces.tuple.Tuple)
+        ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[None] + list(ob_space.shape))
         ob_g, ob_l = tf.split(ob,2,axis=1)
         ob_g = tf.squeeze(ob_g,axis=1) - 128.0
         ob_l = tf.squeeze(ob_l,axis=1) - 128.0
