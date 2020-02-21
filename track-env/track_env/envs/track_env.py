@@ -32,6 +32,14 @@ class TrackEnv(gym.Env):
     def __init__(self, db='VOT', path_head='', data_path='dataset/'):
 
         super(TrackEnv, self).__init__()
+        
+        # Becasuse multiprocessing start env processings by 'spawn', 
+        # ADNetConf configuration in the parent processing will be invalid
+        ADNetConf.get('conf/dylan.yaml')
+        self.stop_iou = ADNetConf.get()['dl_paras']['stop_iou']
+        self.sample_zoom = ADNetConf.g()['dl_paras']['zoom_scale']
+        self.out_limit = ADNetConf.g()['dl_paras']['actor_out_limt']
+
 
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(4,), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=(2,107,107,3), dtype=np.uint8)
@@ -56,18 +64,19 @@ class TrackEnv(gym.Env):
         idx = self.pointer
         
         # move bbox and compute reward
+        action *= self.out_limit 
         pos_moved = self.pos_trackerCurr.move(action)
         reward = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
         self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=10)
         
-        if idx==self.n_images or reward<0.0:
+        if idx==self.n_images or reward<self.stop_iou :
             ob = None
             episode_over = True
             gt = None
         else:
             img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
             self.img = Image.open(img_path)
-            ob = crop_resize(self.img, self.pos_trackerCurr)
+            ob = crop_resize(self.img, self.pos_trackerCurr, zoom=self.sample_zoom)
             self.img_g, self.img_l = ob[0], ob[1]
             episode_over = False
             gt = self.gts[idx]
@@ -77,6 +86,7 @@ class TrackEnv(gym.Env):
         return ob, reward, episode_over, tracker_info
 
     def reset(self, seq_name=None, startFromFirst=False):
+
         """ Repeats NO-OP action until a new episode begins. """
         self.seq_id = seq_name if seq_name else random.choice(self.seq_names)     
         self.gts = [BoundingBox(*i) for i in self.dataset[self.seq_id]['gt']]
@@ -89,7 +99,7 @@ class TrackEnv(gym.Env):
 
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
         self.img = Image.open(img_path)
-        ob = crop_resize(self.img, self.gts[idx-1])
+        ob = crop_resize(self.img, self.gts[idx-1], zoom=self.sample_zoom)
                
         self.pos_trackerCurr = self.gts[idx-1]
         
@@ -102,7 +112,7 @@ class TrackEnv(gym.Env):
         
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]
         img = np.array(Image.open(img_path))
-        img_g, img_l = crop_resize(img, bbox_lastFrame)
+        img_g, img_l = crop_resize(img, bbox_lastFrame, zoom=self.sample_zoom)
         
         plt.figure('img_g')
         plt.imshow(self.img_g)
@@ -128,7 +138,7 @@ if __name__ == '__main__':
     
 #    from track_policy import TrackPolicyNew
     
-    ADNetConf.get('../../../conf/dylan.yaml')
+    # ADNetConf.get('conf/dylan.yaml')
     
     if platform.system() == 'Windows':
         env = TrackEnv(path_head='D:/Codes/DylanTrack/', data_path="D:/DBs/")

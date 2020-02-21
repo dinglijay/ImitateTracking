@@ -335,8 +335,9 @@ def cal_distance(samples, ground_th):
     return deltaX, deltaY, deltaW, deltaH
 
  
-def crop_resize(img, bbox, img_size=107, zoom= [1.0, 2.0]):
-    zoom = ADNetConf.g()['dl_paras']['zoom_scale']
+def crop_resize(img, bbox, img_size=107, zoom=None):
+    if zoom == None:
+        zoom = [1.2]
     
     if isinstance(img, np.ndarray):
         img = Image.fromarray(img)

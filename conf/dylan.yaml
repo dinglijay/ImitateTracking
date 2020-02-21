@@ -1,6 +1,6 @@
 dl_paras:
   zoom_scale: [1.0, 2.0]
-  stop_iou: 0.2
+  stop_iou: 0.3
   actor_out_limt: 0.2
 
 minibatch_size: 64
