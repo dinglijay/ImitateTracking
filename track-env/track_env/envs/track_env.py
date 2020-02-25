@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 import platform
+from memory_profiler import profile
 
 class TrackEnv(gym.Env):
 
@@ -107,34 +108,9 @@ class TrackEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         """ Viewer only supports human mode currently. """
-        idx = self.pointer
-        bbox_lastFrame = self.gts[idx]
-        
-        img_path = self.data_path + self.seq_id + r'/' + self.images[idx+1]
-        img = np.array(Image.open(img_path))
-        img_g, img_l = crop_resize(img, bbox_lastFrame, zoom=self.sample_zoom)
-        
-        plt.figure('img_g')
-        plt.imshow(self.img_g)
-        plt.pause(0.02)
-        
-        plt.figure('img_l')
-        plt.imshow(self.img_l)
-        plt.pause(0.02)
+        return
 
-        plt.figure('img')
-        plt.imshow(img)
-        x, y, w, h = [int(round(num)) for num in self.pos_trackerCurr]
-        currentAxis=plt.gca()
-        rect=patches.Rectangle((x, y),w,h,linewidth=1,edgecolor='r',facecolor='none')
-        currentAxis.add_patch(rect)            
-        plt.show()
-        plt.close('img_g')
-        plt.close('img_l')
-        plt.close('img')
-
-
-if __name__ == '__main__':
+def main():
     
 #    from track_policy import TrackPolicyNew
     
@@ -205,3 +181,6 @@ if __name__ == '__main__':
         ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
 #        ac1 = np.array([0.05,0.05,0.00,0.00])
     print(reward_sum/(env.n_images-1))
+
+if __name__ == '__main__':
+    main()

@@ -129,7 +129,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
     tfirststart = time.perf_counter()
 
     # Dylan, for tensorboard
-    writer = tf.summary.FileWriter('./log/', tf.get_default_session().graph)
+    writer = tf.summary.FileWriter(logger.get_dir(), tf.get_default_session().graph)
     ep_stats = stats(["Total_timesteps", "EpRewMean", "EpLenMean", "FraRewMean"])
 
     nupdates = total_timesteps//nbatch

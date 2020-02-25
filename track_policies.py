@@ -22,28 +22,45 @@ def track_cnn_lstm(nlstm=128, layer_norm=False, conv_fn=nature_cnn, is_training 
         ob_g, ob_l = tf.split(X,2,axis=1)
         ob_g = tf.squeeze(ob_g,axis=1) - 128.0
         ob_l = tf.squeeze(ob_l,axis=1) - 128.0
-
-        # feature extractor - convolutions
+        
+        TRAIN_COVN = True
+        # Conv layer
         net = slim.convolution(ob_g, 96, [7, 7], 2, padding='VALID', scope='conv1',
-                               activation_fn=tf.nn.relu)
-        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*5, beta=0.75)
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*1, beta=0.75)
         net = slim.pool(net, [3, 3], 'MAX', stride=2, padding='VALID', scope='pool1')
 
         net = slim.convolution(net, 256, [5, 5], 2, padding='VALID', scope='conv2',
-                               activation_fn=tf.nn.relu)
-        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*5, beta=0.75)
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*1, beta=0.75)
         net = slim.pool(net, [3, 3], 'MAX', stride=2, padding='VALID', scope='pool2')
 
         net = slim.convolution(net, 512, [3, 3], 1, padding='VALID', scope='conv3',
-                               activation_fn=tf.nn.relu)
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        
+        net_g = slim.convolution(net, 512, [3, 3], 1, padding='VALID', scope='conv4',
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
 
-        net = slim.convolution(net, 512, [3, 3], 1, padding='VALID', scope='fc4',
-                               activation_fn=tf.nn.relu)
+        net = slim.convolution(ob_l, 96, [7, 7], 2, padding='VALID', scope='conv1',
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*1, beta=0.75)
+        net = slim.pool(net, [3, 3], 'MAX', stride=2, padding='VALID', scope='pool1')
 
-        net = slim.convolution(net, 512, [1, 1], 1, padding='VALID', scope='fc5',
-                               activation_fn=tf.nn.relu)
+        net = slim.convolution(net, 256, [5, 5], 2, padding='VALID', scope='conv2',
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        net = tf.nn.lrn(net, depth_radius=5, bias=2, alpha=1e-4*1, beta=0.75)
+        net = slim.pool(net, [3, 3], 'MAX', stride=2, padding='VALID', scope='pool2')
 
-        h = U.flattenallbut0(net)
+        net = slim.convolution(net, 512, [3, 3], 1, padding='VALID', scope='conv3',
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+        
+        net_l = slim.convolution(net, 512, [3, 3], 1, padding='VALID', scope='conv4',
+                               activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, trainable=TRAIN_COVN)
+
+        # Concat Features
+        h = tf.concat([U.flattenallbut0(net_g), U.flattenallbut0(net_l)], 1)
+
+       
 
         # LSTM
         M = tf.placeholder(tf.float32, [nbatch]) #mask (done t-1)
@@ -61,7 +78,7 @@ def track_cnn_lstm(nlstm=128, layer_norm=False, conv_fn=nature_cnn, is_training 
         initial_state = np.zeros(S.shape.as_list(), dtype=float)
         
         # dense
-        h = slim.fully_connected(h, 4, scope='fc6_1', activation_fn=tf.nn.tanh)
+        h = slim.fully_connected(h, 128, scope='fc6_1', activation_fn=tf.nn.tanh)
         
         return h, {'S':S, 'M':M, 'state':snew, 'initial_state':initial_state}
 

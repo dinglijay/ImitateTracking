@@ -29,16 +29,17 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 def argsparser():
     parser = argparse.ArgumentParser("Baselines PPO2")
     # parser.add_argument('--env', help='environment ID', default='PongNoFrameskip-v4')
-    parser.add_argument('--env', help='environment ID', default='track-v0')
-    parser.add_argument('--env_type', help='type of environment, used when the environment type cannot be automatically determined', type=str, default='Track')
-    parser.add_argument('--num_env', help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco', default=1, type=int)
-    parser.add_argument('--seed', help='RNG seed', type=int, default=123)
-    parser.add_argument('--log_dir', help='the directory to save log file', default='log')
-    parser.add_argument('--network', help='network type (mlp, cnn, lstm, cnn_lstm, conv_only)', default='track_vggm')
+    parser.add_argument('--env',      default='track-v0')
+    parser.add_argument('--env_type', default='Track', type=str)
+    parser.add_argument('--num_env',  default=4, type=int)
+    parser.add_argument('--seed',     default=123, type=int)
+    parser.add_argument('--log_dir',  default='log/0225_track_vggm_lstm_ppo2')
+    parser.add_argument('--network',  default='track_cnn_lstm')
     # Traing Configuration
-    parser.add_argument('--num_timesteps', help='number of timesteps per episode', type=int, default=3e6)
-    parser.add_argument('--nsteps', help='number of steps of the vectorized environment per update', type=int, default=2048)
-    parser.add_argument('--load_path', help='the directory to save log file', default='./checkpoint/ACT1_4.ckpt')#'log/checkpoints/00001')
+    parser.add_argument('--num_timesteps', default=3e6, type=int)
+    parser.add_argument('--nsteps',        default=512, type=int)
+    parser.add_argument('--nminibatches',  default=4, type=int)
+    parser.add_argument('--load_path',     default='log/0224_track_vggm_lstm_ppo2/checkpoints/00150')
     return parser.parse_args()
 
 
@@ -77,7 +78,8 @@ if __name__ == '__main__':
         nsteps=args.nsteps,
         log_interval=10,
         save_interval=50,
-        load_path=args.load_path
+        load_path=args.load_path,
+        nminibatches=args.nminibatches
 
     )
 
