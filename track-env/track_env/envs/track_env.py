@@ -25,8 +25,6 @@ from configs import ADNetConf
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-import platform
-from memory_profiler import profile
 
 class TrackEnv(gym.Env):
 
@@ -41,13 +39,9 @@ class TrackEnv(gym.Env):
         self.sample_zoom = ADNetConf.g()['dl_paras']['zoom_scale']
         self.out_limit = ADNetConf.g()['dl_paras']['actor_out_limt']
 
-
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(4,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(2,107,107,3), dtype=np.uint8)
-        # self.observation_space = gym.spaces.Tuple((
-        #         gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32), 
-        #         gym.spaces.Box(low=-128, high=128, shape=(107,107,3), dtype=np.float32)
-        #         ))
+        ob_shape = (107, 107, 3) if len(self.sample_zoom)==1 else (len(self.sample_zoom),) + (107, 107, 3)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=ob_shape, dtype=np.uint8)
 
         self.data_path = data_path
         pkl_path = path_head + 'dataset/vot-otb.pkl' if db=='VOT' else path_head +'dataset/otb-vot.pkl'
@@ -116,12 +110,12 @@ def main():
     
     # ADNetConf.get('conf/dylan.yaml')
     
-    if platform.system() == 'Windows':
-        env = TrackEnv(path_head='D:/Codes/DylanTrack/', data_path="D:/DBs/")
-    else:
-        env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
+    env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
         
     ob = env.reset('vot2016/hand', startFromFirst=True)
+
+    import pdb
+    pdb.set_trace()
     
 #    actor = TrackPolicyNew("actor", 
 #                           ob_space=env.observation_space, 
@@ -152,7 +146,7 @@ def main():
     ac1 = np.array(cal_distance(env.gts[0], env.gts[1]))
     #env.render()
     
-    reward_sum = 0
+    reward_sum, cnt = 0, 0
     while True:
         
         im.set_data(env.img)
@@ -163,6 +157,7 @@ def main():
         gt_rect.set_height(gt[3]-1)
 
         ob, reward, done, tracker_info = env.step(ac1)
+        cnt +=1
             
         result_bb = tracker_info['tracker_post'].to_tuple()
         rect.set_xy(result_bb[:2])  
@@ -180,7 +175,28 @@ def main():
 #        ac1, vpred1 = actor.act(stochastic=False, ob=ob)
         ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
 #        ac1 = np.array([0.05,0.05,0.00,0.00])
-    print(reward_sum/(env.n_images-1))
+    print(reward_sum/(cnt))
+
+
+def memory_analysis():
+    
+    from memory_profiler import profile
+    env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
+
+    for _ in range(2000):
+        ob = env.reset()
+        ac1 = np.array(cal_distance(env.gts[0], env.gts[1]))
+        reward_sum, cnt = 0, 0
+
+        while True:
+            ob, reward, done, tracker_info = env.step(ac1)
+            reward_sum += reward
+            cnt += 1
+            if done:
+                break
+            ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
+        print(cnt,reward_sum/(cnt))
+
 
 if __name__ == '__main__':
     main()

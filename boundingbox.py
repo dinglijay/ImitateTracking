@@ -353,7 +353,7 @@ def crop_resize(img, bbox, img_size=107, zoom=None):
         patch = np.array(patch)
         patchs.append(patch)
         
-    return np.array(patchs)
+    return np.squeeze(np.array(patchs))
 
 if __name__ == '__main__':
     ADNetConf.get('./conf/dylan.yaml')

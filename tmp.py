@@ -1,5 +1,4 @@
 import argparse
-import os.path as osp
 import multiprocessing
 import sys
 import os
@@ -10,6 +9,7 @@ import track_env
 import ppo2
 from baselines.common.vec_env import VecFrameStack
 from baselines.common.cmd_util import make_vec_env
+from baselines.common.models import get_network_builder
 from baselines import bench
 from baselines import logger
 from baselines.run import get_env_type
@@ -28,18 +28,18 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def argsparser():
     parser = argparse.ArgumentParser("Baselines PPO2")
-    # parser.add_argument('--env', help='environment ID', default='PongNoFrameskip-v4')
-    parser.add_argument('--env',      default='track-v0')
-    parser.add_argument('--env_type', default='Track', type=str)
-    parser.add_argument('--num_env',  default=4, type=int)
-    parser.add_argument('--seed',     default=123, type=int)
-    parser.add_argument('--log_dir',  default='log/0225_track_vggm_lstm_ppo2')
-    parser.add_argument('--network',  default='track_cnn_lstm')
+    parser.add_argument('--env',            default='track-v0')
+    parser.add_argument('--env_type',       default='Track', type=str)
+    parser.add_argument('--num_env',        default=8, type=int)
+    parser.add_argument('--seed',           default=123, type=int)
+    parser.add_argument('--network',        default='track_cnn_lstm_fc')
+    parser.add_argument('--value_network',  default='value_cnn_fc12')
     # Traing Configuration
     parser.add_argument('--num_timesteps', default=3e6, type=int)
-    parser.add_argument('--nsteps',        default=512, type=int)
+    parser.add_argument('--nsteps',        default=400, type=int)
     parser.add_argument('--nminibatches',  default=4, type=int)
-    parser.add_argument('--load_path',     default='log/0224_track_vggm_lstm_ppo2/checkpoints/00150')
+    parser.add_argument('--load_path',     default='log/0226_trackLstm_valueCnn/checkpoints/01050')
+    parser.add_argument('--log_dir',       default='log/0227_trackLstm_valueCnn')
     return parser.parse_args()
 
 
@@ -65,13 +65,12 @@ if __name__ == '__main__':
     env = make_vec_env(env_id, env_type, nenv, args.seed)
     env = VecFrameStack(env, frame_stack_size)
 
-
     logger.log('Training ppo2 on {}:{} with arguments \n{}'.format(env_type, env_id, args))
-
-
+    logger.log(ADNetConf.conf.__dict__)
 
     model = ppo2.learn(
         network=args.network,
+        value_network=get_network_builder(args.value_network),
         env=env, 
         total_timesteps=args.num_timesteps,
         seed=args.seed, 
@@ -80,16 +79,6 @@ if __name__ == '__main__':
         save_interval=50,
         load_path=args.load_path,
         nminibatches=args.nminibatches
-
     )
 
-
-
-
-    # env = gym.make(args.env_id)
-    # env = bench.Monitor(env, args.log_dir and
-    #                     osp.join(args.log_dir, "monitor.json"))
-
-    # learn(network='cnn', env=args.env_id, total_timesteps=args.num_timesteps, seed=args.seed)
-
-    # model, env = train(args)
+    print('Training ended')

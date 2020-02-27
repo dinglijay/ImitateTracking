@@ -24,5 +24,6 @@ class ADNetConf:
     
 if __name__ == '__main__':
     ADNetConf.get('conf/dylan.yaml')
-    print(ADNetConf.get()['initial_finetune']['pos_thresh'])
+    print(ADNetConf.get()['dl_paras']['zoom_scale'])
+    print(ADNetConf.conf.__dict__)
 

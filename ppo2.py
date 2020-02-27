@@ -14,6 +14,7 @@ from baselines.ppo2.runner import Runner
 from baselines.gail.statistics import stats
 
 import tensorflow as tf
+from track_policies import load_vggm_conv
 
 
 def constfn(val):
@@ -110,6 +111,9 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
     model = model_fn(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=nenvs, nbatch_train=nbatch_train,
                     nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
                     max_grad_norm=max_grad_norm, comm=comm, mpi_rank_weight=mpi_rank_weight)
+
+    # Load VGG-m Conv Layer parameters
+    load_vggm_conv('checkpoint/ACT1-4.ckpt')
 
     if load_path is not None:
         model.load(load_path)
@@ -225,7 +229,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         if is_mpi_root:
             EpRewMean = safemean([epinfo['r'] for epinfo in epinfobuf])
             EpLenMean = safemean([epinfo['l'] for epinfo in epinfobuf])
-            ep_stats.add_all_summary(writer, [update*nsteps, EpRewMean, EpLenMean, EpRewMean/EpLenMean], update)
+            ep_stats.add_all_summary(writer, [update*nbatch, EpRewMean, EpLenMean, EpRewMean/EpLenMean], update)
 
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)
