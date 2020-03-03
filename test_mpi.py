@@ -1,4 +1,4 @@
-# from configs import ADNetConf
+# from conf.configs import ADNetConf
 # import multiprocessing as mp
 # import os
 

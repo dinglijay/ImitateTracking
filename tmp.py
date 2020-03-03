@@ -14,7 +14,7 @@ from baselines import bench
 from baselines import logger
 from baselines.run import get_env_type
 
-from configs import ADNetConf
+from conf.configs import ADNetConf
 import track_policies
 
 try:

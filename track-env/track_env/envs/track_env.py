@@ -20,7 +20,7 @@ sys.path.append('../../..')
     
 from PIL import Image
 from boundingbox import BoundingBox, cal_distance, crop_resize
-from configs import ADNetConf
+from conf.configs import ADNetConf
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches

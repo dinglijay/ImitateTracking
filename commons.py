@@ -3,7 +3,7 @@ import random
 import cv2
 import numpy as np
 
-from configs import ADNetConf
+from conf.configs import ADNetConf
 
 
 def imread(path):

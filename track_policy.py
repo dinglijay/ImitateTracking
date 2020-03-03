@@ -12,7 +12,7 @@ import gym
 from baselines.common import tf_util as U
 from baselines.common.distributions import make_pdtype
 
-from configs import ADNetConf
+from conf.configs import ADNetConf
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'

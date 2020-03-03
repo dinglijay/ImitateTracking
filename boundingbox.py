@@ -10,7 +10,7 @@ import cv2
 import itertools
 
 from commons import minmax
-from configs import ADNetConf
+from conf.configs import ADNetConf
 from PIL import Image
 
 class Coordinate:

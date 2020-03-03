@@ -23,7 +23,7 @@ class ADNetConf:
         return self.conf[key]
     
 if __name__ == '__main__':
-    ADNetConf.get('conf/dylan.yaml')
+    ADNetConf.get('dylan.yaml')
     print(ADNetConf.get()['dl_paras']['zoom_scale'])
     print(ADNetConf.conf.__dict__)
 

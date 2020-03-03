@@ -2,7 +2,7 @@ import gym
 import track_env
 import numpy as np
 from stable_baselines.common.env_checker import check_env
-from configs import ADNetConf
+from conf.configs import ADNetConf
 
 ADNetConf.get('conf/dylan.yaml')
 env= gym.make('track-v0')
