@@ -1,4 +1,4 @@
 dl_paras:
-  zoom_scale: [1.5]
-  stop_iou: 0.3
-  actor_out_limt: 0.3
+  zoom_scale: [1.0, 2.0]
+  stop_iou_cnt: [0.2, 10] 
+  actor_out_limt: 0.2

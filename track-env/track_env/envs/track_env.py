@@ -35,7 +35,7 @@ class TrackEnv(gym.Env):
         # Becasuse multiprocessing start env processings by 'spawn', 
         # ADNetConf configuration in the parent processing will be invalid
         ADNetConf.get('conf/dylan.yaml')
-        self.stop_iou = ADNetConf.get()['dl_paras']['stop_iou']
+        self.stop_iou, self.stop_cnt = ADNetConf.get()['dl_paras']['stop_iou_cnt']
         self.sample_zoom = ADNetConf.g()['dl_paras']['zoom_scale']
         self.out_limit = ADNetConf.g()['dl_paras']['actor_out_limt']
 
@@ -64,7 +64,8 @@ class TrackEnv(gym.Env):
         reward = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
         self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=10)
         
-        if idx==self.n_images or reward<self.stop_iou :
+        self.cnt_sml_rew = 0 if reward>self.stop_iou else self.cnt_sml_rew+1
+        if idx==self.n_images or self.cnt_sml_rew>self.stop_cnt :
             ob = None
             episode_over = True
             gt = None
@@ -97,6 +98,8 @@ class TrackEnv(gym.Env):
         ob = crop_resize(self.img, self.gts[idx-1], zoom=self.sample_zoom)
                
         self.pos_trackerCurr = self.gts[idx-1]
+
+        self.cnt_sml_rew = 0
         
         return ob
 
@@ -114,9 +117,6 @@ def main():
         
     ob = env.reset('vot2016/hand', startFromFirst=True)
 
-    import pdb
-    pdb.set_trace()
-    
 #    actor = TrackPolicyNew("actor", 
 #                           ob_space=env.observation_space, 
 #                           ac_space=env.action_space)
@@ -180,7 +180,7 @@ def main():
 
 def memory_analysis():
     
-    from memory_profiler import profile
+    # from memory_profiler import profile
     env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
 
     for _ in range(2000):
@@ -190,6 +190,7 @@ def memory_analysis():
 
         while True:
             ob, reward, done, tracker_info = env.step(ac1)
+            print(reward)
             reward_sum += reward
             cnt += 1
             if done:
@@ -199,4 +200,4 @@ def memory_analysis():
 
 
 if __name__ == '__main__':
-    main()
+    memory_analysis()

@@ -30,16 +30,16 @@ def argsparser():
     parser = argparse.ArgumentParser("Baselines PPO2")
     parser.add_argument('--env',            default='track-v0')
     parser.add_argument('--env_type',       default='Track', type=str)
-    parser.add_argument('--num_env',        default=8, type=int)
+    parser.add_argument('--num_env',        default=12, type=int)
     parser.add_argument('--seed',           default=123, type=int)
-    parser.add_argument('--network',        default='track_cnn_lstm_fc')
-    parser.add_argument('--value_network',  default='value_cnn_fc12')
+    parser.add_argument('--network',        default='track_2cnn_fc1')
+    parser.add_argument('--value_network',  default=None) #'value_cnn_fc12')
     # Traing Configuration
-    parser.add_argument('--num_timesteps', default=3e6, type=int)
-    parser.add_argument('--nsteps',        default=400, type=int)
-    parser.add_argument('--nminibatches',  default=4, type=int)
-    parser.add_argument('--load_path',     default='log/0226_trackLstm_valueCnn/checkpoints/01050')
-    parser.add_argument('--log_dir',       default='log/0227_trackLstm_valueCnn')
+    parser.add_argument('--num_timesteps',  default=4e6, type=int)
+    parser.add_argument('--nsteps',         default=256, type=int)
+    parser.add_argument('--nminibatches',   default=4, type=int)
+    parser.add_argument('--load_path',      default='log/0228_trackCnnFc12/checkpoints/01300')
+    parser.add_argument('--log_dir',        default='log/0228_trackCnnFc12+')
     return parser.parse_args()
 
 
@@ -68,9 +68,10 @@ if __name__ == '__main__':
     logger.log('Training ppo2 on {}:{} with arguments \n{}'.format(env_type, env_id, args))
     logger.log(ADNetConf.conf.__dict__)
 
+    value_network =get_network_builder(args.value_network) if args.value_network else None
     model = ppo2.learn(
         network=args.network,
-        value_network=get_network_builder(args.value_network),
+        value_network=value_network,
         env=env, 
         total_timesteps=args.num_timesteps,
         seed=args.seed, 
@@ -82,3 +83,4 @@ if __name__ == '__main__':
     )
 
     print('Training ended')
+    env.close()
