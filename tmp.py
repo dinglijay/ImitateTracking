@@ -39,7 +39,7 @@ def argsparser():
     parser.add_argument('--nsteps',         default=256, type=int)
     parser.add_argument('--nminibatches',   default=4, type=int)
     parser.add_argument('--load_path',      default='log/0228_trackCnnFc12/checkpoints/01300')
-    parser.add_argument('--log_dir',        default='log/0228_trackCnnFc12+')
+    parser.add_argument('--log_dir',        default='log/0307_track2CnnFc12')
     return parser.parse_args()
 
 

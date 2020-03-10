@@ -98,7 +98,6 @@ class TrackEnv(gym.Env):
         ob = crop_resize(self.img, self.gts[idx-1], zoom=self.sample_zoom)
                
         self.pos_trackerCurr = self.gts[idx-1]
-
         self.cnt_sml_rew = 0
         
         return ob
@@ -109,18 +108,19 @@ class TrackEnv(gym.Env):
 
 def main():
     
-#    from track_policy import TrackPolicyNew
+    from track_policy import TrackPolicy
+    from baselines.common import tf_util as U
     
-    # ADNetConf.get('conf/dylan.yaml')
-    
+    ADNetConf.get('../../../conf/dylan.yaml')
     env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
-        
-    ob = env.reset('vot2016/hand', startFromFirst=True)
+    ob = env.reset(startFromFirst=True)
+    # ob = env.reset('vot2016/hand', startFromFirst=True)
 
-#    actor = TrackPolicyNew("actor", 
-#                           ob_space=env.observation_space, 
-#                           ac_space=env.action_space)
-#    U.initialize()
+    actor = TrackPolicy("actor",
+                        ob_space=env.observation_space,
+                        ac_space=env.action_space,
+                        load_path='../../../log/0228_trackCnnFc12/checkpoints/01300')
+    U.initialize()
     
     
     img = Image.open(env.data_path + env.seq_id + r'/' + env.images[0])
@@ -142,8 +142,8 @@ def main():
     plt.pause(.01)
     plt.draw()
     
-#    ac1, vpred1 = actor.act(stochastic=False, fc_input=ob)
-    ac1 = np.array(cal_distance(env.gts[0], env.gts[1]))
+    ac1, vpred1 = actor.act(stochastic=False, ob=ob)
+    # ac1 = 5.0*np.array(cal_distance(env.gts[0], env.gts[1]))
     #env.render()
     
     reward_sum, cnt = 0, 0
@@ -172,8 +172,8 @@ def main():
         if done:
             break
 #        env.render()
-#        ac1, vpred1 = actor.act(stochastic=False, ob=ob)
-        ac1 = np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
+        ac1, vpred1 = actor.act(stochastic=False, ob=ob)
+        # ac1 = 5.0*np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
 #        ac1 = np.array([0.05,0.05,0.00,0.00])
     print(reward_sum/(cnt))
 
@@ -200,4 +200,5 @@ def memory_analysis():
 
 
 if __name__ == '__main__':
-    memory_analysis()
+    # memory_analysis()
+    main()

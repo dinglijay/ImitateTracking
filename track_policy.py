@@ -20,14 +20,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 class TrackPolicy(object):
     recurrent = False
     
-    def __init__(self, name, reuse=False, *args, **kwargs):
+    def __init__(self, name, load_path=None, reuse=False, *args, **kwargs):
         
         with tf.variable_scope(name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             self.scope = tf.get_variable_scope().name
             self.__build_graph(*args, **kwargs)
-            self.read_original_weights()
+        print(tf.trainable_variables())
+        self.read_original_weights(load_path)
 
     def __build_graph(self, ob_space, ac_space, gaussian_fixed_var=True):
         
@@ -77,26 +78,17 @@ class TrackPolicy(object):
           
         # fcs_actor            
         net = slim.fully_connected(feat, 512, scope='polfc1', activation_fn=tf.nn.relu)
-        out_limit = ADNetConf.g()['dl_paras']['actor_out_limt']
-        if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-            mean = out_limit * slim.fully_connected(net, pdtype.param_shape()[0]//2, 
-                                        scope='polfinal', activation_fn=tf.nn.tanh)
-            logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], 
+        # pdparam = slim.fully_connected(net, 4, scope='polfc2', activation_fn=None)
+        mean = slim.fully_connected(net, pdtype.param_shape()[0]//2, 
+                                    scope='polfc2', activation_fn=None)
+        logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], 
                                      initializer=tf.zeros_initializer())
-            pdparam = tf.concat([mean, logstd], axis=1)
-        else:
-            pdparam = out_limit * slim.fully_connected(net, pdtype.param_shape()[0], 
-                                           scope='polfinal', activation_fn=tf.nn.tanh)
+        pdparam = tf.concat([mean, logstd], axis=1)
+        self.pd = pdtype.pdfromflat(pdparam)
 
         # fcs_value
         net = slim.fully_connected(feat, 512, scope='vffc1', activation_fn=tf.nn.relu) 
         self.vpred = slim.fully_connected(net, 1, scope='vffc2', activation_fn=tf.nn.tanh) 
-
-                        
-        self.pd = pdtype.pdfromflat(pdparam)
-
-        self.state_in = []
-        self.state_out = []
 
         # change for BC
         stochastic = U.get_placeholder(name="stochastic", dtype=tf.bool, shape=())
@@ -117,39 +109,37 @@ class TrackPolicy(object):
     def get_initial_state(self):
         return []
     
-    def read_original_weights(self):
+    def read_original_weights(self, load_path):
         U.initialize()
         tf_session = tf.get_default_session()
 
-        weights = joblib.load(os.path.expanduser('./checkpoint/ACT1-4.ckpt'))
-#        weights_pol = joblib.load(os.path.expanduser('./checkpoint/no_fineture.reword_limitation_0.3/Actor_Disc004000.ckpt'))
-#        weights.update(weights_pol)
-        tensors_weights = { self.scope+'/conv1/weights:0'   : 'conv1/weights:0',
-                            self.scope+'/conv1/biases:0'    : 'conv1/biases:0',
-                            self.scope+'/conv2/weights:0'   : 'conv2/weights:0',
-                            self.scope+'/conv2/biases:0'    : 'conv2/biases:0',
-                            self.scope+'/conv3/weights:0'   : 'conv3/weights:0',
-                            self.scope+'/conv3/biases:0'    : 'conv3/biases:0',
-                            self.scope+'/conv4/weights:0'   : 'conv4/weights:0',
-                            self.scope+'/conv4/biases:0'    : 'conv4/biases:0'
-#                            self.scope+'/polfc1/weights:0'  : 'pi/polfc1/w:0',
-#                            self.scope+'/polfc1/biases:0'   : 'pi/polfc1/b:0',
-#                            self.scope+'/polfinal/weights:0': 'pi/polfinal/w:0',
-#                            self.scope+'/polfinal/biases:0' : 'pi/polfinal/b:0',
-#                            self.scope+'/logstd:0'          : 'pi/logstd:0',
-#                            self.scope+'/vffc1/weights:0'   : 'pi/vffc1/w:0',
-#                            self.scope+'/vffc1/biases:0'    : 'pi/vffc1/b:0',
-#                            self.scope+'/vffc2/weights:0'   : 'pi/vffc2/w:0',
-#                            self.scope+'/vffc2/biases:0'    : 'pi/vffc2/b:0'
+        if load_path == None:
+            load_path = './log/0228_trackCnnFc12/checkpoints/01300'
+
+        weights = joblib.load(load_path)
+        tensors_weights = { self.scope+'/conv1/weights:0'   : 'ppo2_model/pi/conv1/weights:0',
+                            self.scope+'/conv1/biases:0'    : 'ppo2_model/pi/conv1/biases:0',
+                            self.scope+'/conv2/weights:0'   : 'ppo2_model/pi/conv2/weights:0',
+                            self.scope+'/conv2/biases:0'    : 'ppo2_model/pi/conv2/biases:0',
+                            self.scope+'/conv3/weights:0'   : 'ppo2_model/pi/conv3/weights:0',
+                            self.scope+'/conv3/biases:0'    : 'ppo2_model/pi/conv3/biases:0',
+                            self.scope+'/conv4/weights:0'   : 'ppo2_model/pi/conv4/weights:0',
+                            self.scope+'/conv4/biases:0'    : 'ppo2_model/pi/conv4/biases:0',
+                            self.scope+'/polfc1/weights:0'  : 'ppo2_model/pi/fc1/weights:0',
+                            self.scope+'/polfc1/biases:0'   : 'ppo2_model/pi/fc1/biases:0',
+                            self.scope+'/polfc2/weights:0'  : 'ppo2_model/pi/w:0',
+                            self.scope+'/polfc2/biases:0'   : 'ppo2_model/pi/b:0'
+                            # 'vffc1/weights:0'   : 'pi/vffc1/weights:0',
+                            # 'vffc1/biases:0'    : 'pi/vffc1/biases:0',
+                            # 'vffc2/weights:0'   : 'pi/vffc2/weights:0',
+                            # 'vffc2/biases:0'    : 'pi/vffc2/biases:0'
                            }
-        for var in self.get_trainable_variables():
-            if 'conv' in var.name:
+        for var in tf.trainable_variables():
+            if 'vffc' not in var.name and 'logstd' not in var.name:
                 val = weights[tensors_weights[var.name]]
                 tf_session.run(var.assign(val))
                 print('Original weights assigned: %s' % var.name)
-    
-#        print(tf_session.run(tf.report_uninitialized_variables()))
-    
+        print(tf_session.run(tf.report_uninitialized_variables()))    
 
 def show_variables( variables=None, sess=None):
     sess = sess or tf.get_default_session()
