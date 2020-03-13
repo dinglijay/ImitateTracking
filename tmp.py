@@ -32,14 +32,14 @@ def argsparser():
     parser.add_argument('--env_type',       default='Track', type=str)
     parser.add_argument('--num_env',        default=12, type=int)
     parser.add_argument('--seed',           default=123, type=int)
-    parser.add_argument('--network',        default='track_2cnn_fc1')
+    parser.add_argument('--network',        default='track_2cnn_fc12')
     parser.add_argument('--value_network',  default=None) #'value_cnn_fc12')
     # Traing Configuration
     parser.add_argument('--num_timesteps',  default=4e6, type=int)
-    parser.add_argument('--nsteps',         default=256, type=int)
+    parser.add_argument('--nsteps',         default=300, type=int)
     parser.add_argument('--nminibatches',   default=4, type=int)
-    parser.add_argument('--load_path',      default='log/0228_trackCnnFc12/checkpoints/01300')
-    parser.add_argument('--log_dir',        default='log/0307_track2CnnFc12')
+    parser.add_argument('--load_path',      default=None)#'log/0309_track2CnnFc12/checkpoints/00250')
+    parser.add_argument('--log_dir',        default='log/0311_track2CnnFc12_noAct')
     return parser.parse_args()
 
 

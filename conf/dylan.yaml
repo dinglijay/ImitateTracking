@@ -1,4 +1,44 @@
 dl_paras:
   zoom_scale: [1.0, 2.0]
-  stop_iou_cnt: [0.2, 10] 
-  actor_out_limt: 0.2
+  stop_iou_cnt: [0.2, 1] 
+  actor_out_limt: 0.3
+  len_seq: 40
+  reward_stages: [0.2,0.7,-1,0,1]
+
+minibatch_size: 64
+
+initial_finetune:
+  pos_thresh: 0.7
+  neg_thresh: 0.3
+  pos_num: 1800 #200
+  neg_num: 1200 #150
+  iter: 100 #20
+  learning_rate: 0.0003
+
+finetune:
+  interval: 50 #2000
+  pos_thresh: 0.7
+  neg_thresh: 0.3
+  long_term: 100
+  short_term: 10
+  pos_num: 50 #30
+  neg_num: 25 #15
+  iter: 20 #20
+  learning_rate: 0.0001
+
+action_move:
+  x: 0.03
+  y: 0.03
+  w: 0.03
+  h: 0.03
+
+action_history: 10
+redetection:
+  samples: 256 #64 # 256
+
+predict:
+  roi_zoom: 1.4
+  num_action: 20
+  stop_iou: 0.93
+  thresh_fail: -100 #0.50
+  thresh_success: 0.50

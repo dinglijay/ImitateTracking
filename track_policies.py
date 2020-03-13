@@ -45,28 +45,6 @@ def vggm1234(x, TRAIN_COVN=True):
     return U.flattenallbut0(net)
 
 
-@register("track_2cnn_fc1")
-def track_2cnn_fc12(**conv_kwargs):
-    def network_fn(X, nenv=1):
-
-        ob_g, ob_l = tf.split(X,2,axis=1)
-        ob_g = tf.squeeze(ob_g,axis=1) - 128.0
-        ob_l = tf.squeeze(ob_l,axis=1) - 128.0
-        
-        # Conv layer
-        net_g = vggm1234(ob_g)
-        net_l = vggm1234(ob_l)
-        feat = tf.concat([net_g, net_l], 1)
-          
-        # fcs_actor            
-        h = slim.fully_connected(feat, 512, scope='fc1', activation_fn=tf.nn.relu)
-        # h = slim.fully_connected(h, 4, scope='fc2', activation_fn=tf.nn.tanh)
-       
-        return h
-
-    return network_fn
-
-
 @register("track_2cnn_fc12")
 def track_2cnn_fc12(**conv_kwargs):
     def network_fn(X, nenv=1):
@@ -82,21 +60,7 @@ def track_2cnn_fc12(**conv_kwargs):
           
         # fcs_actor            
         h = slim.fully_connected(feat, 512, scope='fc1', activation_fn=tf.nn.relu)
-        h = slim.fully_connected(h, 4, scope='fc2', activation_fn=tf.nn.tanh)
-       
-        return h
-
-    return network_fn
-
-
-@register("track_cnn_fc12")
-def track_cnn_fc12(**conv_kwargs):
-    def network_fn(X, nenv=1):
-
-        ob = X - 128.0
-        feat = vggm1234(ob)
-        h = slim.fully_connected(feat, 512, scope='fc1', activation_fn=tf.nn.relu)
-        h = slim.fully_connected(h, 4, scope='fc2', activation_fn=tf.nn.tanh)
+        # h = slim.fully_connected(h, 4, scope='fc2', activation_fn=None)
        
         return h
 
@@ -134,18 +98,24 @@ def track_2cnn_lstm(nlstm=256, layer_norm=False, conv_fn=nature_cnn, is_training
         h = seq_to_batch(h5)
         initial_state = np.zeros(S.shape.as_list(), dtype=float)
         
-        return h, {'S':S, 'M':M, 'state':snew, 'initial_state':initial_state}
+        return (feat, h), {'S':S, 'M':M, 'state':snew, 'initial_state':initial_state}
 
     return network_fn
 
-@register("track_cnn_lstm_fc")
+@register("track_2cnn_lstm_fc")
 def track_cnn_lstm_fc(nlstm=256, layer_norm=False, conv_fn=nature_cnn, is_training = True, **conv_kwargs):
     def network_fn(X, nenv=1):
         nbatch = X.shape[0]
         nsteps = nbatch // nenv
 
-        ob = X - 128.0
-        feat = vggm1234(ob)
+        ob_g, ob_l = tf.split(X,2,axis=1)
+        ob_g = tf.squeeze(ob_g,axis=1) - 128.0
+        ob_l = tf.squeeze(ob_l,axis=1) - 128.0
+        
+        # Conv layer
+        net_g = vggm1234(ob_g)
+        net_l = vggm1234(ob_l)
+        feat = tf.concat([net_g, net_l], 1)
 
         # LSTM
         M = tf.placeholder(tf.float32, [nbatch]) #mask (done t-1)
@@ -165,7 +135,7 @@ def track_cnn_lstm_fc(nlstm=256, layer_norm=False, conv_fn=nature_cnn, is_traini
         # FC
         h = slim.fully_connected(h, 4, scope='fc', activation_fn=tf.nn.tanh)
         
-        return h, {'S':S, 'M':M, 'state':snew, 'initial_state':initial_state}
+        return (feat, h), {'S':S, 'M':M, 'state':snew, 'initial_state':initial_state}
 
     return network_fn
 

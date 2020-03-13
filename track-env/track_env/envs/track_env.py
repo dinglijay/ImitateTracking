@@ -38,6 +38,8 @@ class TrackEnv(gym.Env):
         self.stop_iou, self.stop_cnt = ADNetConf.get()['dl_paras']['stop_iou_cnt']
         self.sample_zoom = ADNetConf.g()['dl_paras']['zoom_scale']
         self.out_limit = ADNetConf.g()['dl_paras']['actor_out_limt']
+        self.len_seq = ADNetConf.g()['dl_paras']['len_seq']
+        self.reward_stages = ADNetConf.g()['dl_paras']['reward_stages']
 
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(4,), dtype=np.float32)
         ob_shape = (107, 107, 3) if len(self.sample_zoom)==1 else (len(self.sample_zoom),) + (107, 107, 3)
@@ -61,11 +63,12 @@ class TrackEnv(gym.Env):
         # move bbox and compute reward
         action *= self.out_limit 
         pos_moved = self.pos_trackerCurr.move(action)
-        reward = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
+        iou = pos_moved.fit_image(self.img.size).iou(self.gts[idx-1])
+        reward = cal_reward(iou, self.reward_stages)
         self.pos_trackerCurr = pos_moved.fit_image(self.img.size, margin=10)
         
         self.cnt_sml_rew = 0 if reward>self.stop_iou else self.cnt_sml_rew+1
-        if idx==self.n_images or self.cnt_sml_rew>self.stop_cnt :
+        if idx==self.n_images or idx==self.stop_idx or self.cnt_sml_rew>self.stop_cnt :
             ob = None
             episode_over = True
             gt = None
@@ -73,7 +76,6 @@ class TrackEnv(gym.Env):
             img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
             self.img = Image.open(img_path)
             ob = crop_resize(self.img, self.pos_trackerCurr, zoom=self.sample_zoom)
-            self.img_g, self.img_l = ob[0], ob[1]
             episode_over = False
             gt = self.gts[idx]
             
@@ -92,6 +94,7 @@ class TrackEnv(gym.Env):
 
         self.pointer = idx = 1 if startFromFirst else \
                              1 + np.random.randint(max(1, self.n_images-self.min_len))
+        self.stop_idx = idx + self.len_seq
 
         img_path = self.data_path + self.seq_id + r'/' + self.images[idx]
         self.img = Image.open(img_path)
@@ -106,20 +109,28 @@ class TrackEnv(gym.Env):
         """ Viewer only supports human mode currently. """
         return
 
+
+def cal_reward(iou, stages=None):
+    if not stages:
+        return iou
+    a, b, ar, br, cr = stages
+    return float(np.piecewise(iou,[iou<a, a<=iou<=b, b<iou], [ar,br,cr]))
+
+
 def main():
     
     from track_policy import TrackPolicy
     from baselines.common import tf_util as U
     
     ADNetConf.get('../../../conf/dylan.yaml')
-    env = TrackEnv(path_head='../../../', data_path="../../../dataset/")
+    env = TrackEnv(db='OTB', path_head='../../../', data_path="../../../dataset/")
     ob = env.reset(startFromFirst=True)
     # ob = env.reset('vot2016/hand', startFromFirst=True)
 
     actor = TrackPolicy("actor",
                         ob_space=env.observation_space,
                         ac_space=env.action_space,
-                        load_path='../../../log/0228_trackCnnFc12/checkpoints/01300')
+                        load_path='../../../log/0309_track2CnnFc12_noAct/checkpoints/01100')
     U.initialize()
     
     
@@ -143,6 +154,7 @@ def main():
     plt.draw()
     
     ac1, vpred1 = actor.act(stochastic=False, ob=ob)
+    ac1 = np.clip(ac1, -1, 1)
     # ac1 = 5.0*np.array(cal_distance(env.gts[0], env.gts[1]))
     #env.render()
     
@@ -173,6 +185,8 @@ def main():
             break
 #        env.render()
         ac1, vpred1 = actor.act(stochastic=False, ob=ob)
+        ac1 = np.clip(ac1, -1, 1)
+
         # ac1 = 5.0*np.array(cal_distance(tracker_info['tracker_post'], tracker_info['gt']))
 #        ac1 = np.array([0.05,0.05,0.00,0.00])
     print(reward_sum/(cnt))

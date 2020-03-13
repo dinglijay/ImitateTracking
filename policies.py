@@ -6,6 +6,7 @@ from baselines.common.input import observation_placeholder, encode_observation
 from baselines.common.tf_util import adjust_shape
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 from baselines.common.models import get_network_builder
+from tensorflow.contrib.slim import fully_connected as fc_acti
 
 import gym
 
@@ -60,7 +61,8 @@ class PolicyWithValue(object):
             self.q = fc(vf_latent, 'q', env.action_space.n)
             self.vf = self.q
         else:
-            self.vf = fc(vf_latent, 'vf', 1)
+            # self.vf = fc_acti(vf_latent, 256, scope='vf/fc1', activation_fn=tf.nn.relu) 
+            self.vf = fc(vf_latent, 'vf/fc2', 1)
             self.vf = self.vf[:,0]
 
     def _evaluate(self, variables, observation, **extra_feed):
@@ -140,7 +142,7 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
 
         with tf.variable_scope('pi', reuse=tf.AUTO_REUSE):
             policy_latent = policy_network(encoded_x)
-            if isinstance(policy_latent, tuple):
+            if isinstance(policy_latent, tuple) and isinstance(policy_latent[1], dict):
                 policy_latent, recurrent_tensors = policy_latent
 
                 if recurrent_tensors is not None:
@@ -153,8 +155,12 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
 
         _v_net = value_network
 
+        if isinstance(policy_latent, tuple):
+            feat_latent, policy_latent = policy_latent
+        else:
+            feat_latent = policy_latent
         if _v_net is None or _v_net == 'shared':
-            vf_latent = policy_latent
+            vf_latent = feat_latent
         else:
             if _v_net == 'copy':
                 _v_net = policy_network

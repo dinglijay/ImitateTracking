@@ -230,6 +230,12 @@ class BoundingBox:
 
         # return the intersection over union value
         return iou
+
+    def do_action_gail(self, action, imgwh=None):
+        new_box = self.move(action)
+        if imgwh:
+            new_box.fit_image(imgwh, margin=10)
+        return new_box
     
     def move(self, deta):
             
@@ -304,8 +310,8 @@ class BoundingBox:
         pos_samples = []
         for _ in range(pos_size):
             # dylan, avoid gaussian_samplesv is empty
-            # if gaussian_samples:
-            pos_samples.append(random.choice(gaussian_samples))
+            if gaussian_samples:
+                pos_samples.append(random.choice(gaussian_samples))
                 
         neg_candidates = uniform_samples + whole_samples
         neg_samples = []
@@ -371,6 +377,11 @@ if __name__ == '__main__':
     img = Image.open('0028.jpg', mode='r')    
     bbox = BoundingBox(331,152,26,61)
     ob = crop_resize(img, bbox)
+
+    # fit_image test
+    print('img size: ', img.size)
+    bbox = BoundingBox(700,350,26,61)
+    print(bbox.fit_image(img.size, margin=10))
     
 #    # random generator test
 #    gt_box = BoundingBox.read_vid_gt('./data/freeman1/')[0]
